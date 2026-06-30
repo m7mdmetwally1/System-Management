@@ -1,11 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
+import { writeFileSync } from 'fs';
+import { AppModule } from '../src/app.module';
 
-async function bootstrap() {
+async function generateSwaggerSpec() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('System Management API')
@@ -15,8 +14,13 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
-
-  await app.listen(process.env.PORT ?? 3000);
+  
+  // Write the spec to a JSON file
+  writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
+  
+  console.log('Swagger spec generated successfully: swagger-spec.json');
+  
+  await app.close();
 }
-bootstrap();
+
+generateSwaggerSpec();

@@ -1,0 +1,52 @@
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Tenant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+model User {
+  id                    Int      @id @default(autoincrement())
+  email                 String
+  password              String
+  role                  Role     @default(USER)
+  tenantId              Int
+  tenant                Tenant   @relation(fields: [tenantId], references: [id])
+  refreshToken          String?  @unique
+  refreshTokenExpiresAt DateTime?
+  resetToken            String?  @unique
+  resetTokenExpiresAt   DateTime?
+  failedLoginAttempts   Int      @default(0)
+  lockedUntil           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([email, tenantId])
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  email     String
+  tenantId  Int
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
