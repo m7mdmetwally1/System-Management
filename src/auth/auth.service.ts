@@ -28,7 +28,7 @@ export class AuthService {
   ) {}
 
   async sendInvite(sendInviteDto: SendInviteDto) {
-    const { email, tenantId } = sendInviteDto;
+    const { email, tenantId, role = 'USER' } = sendInviteDto;
 
     // 1. Check if tenant exists
     const tenant = await this.prisma.tenant.findUnique({
@@ -52,6 +52,7 @@ export class AuthService {
         tenantId,
         token,
         expiresAt,
+        role,
       },
     });
 
@@ -116,7 +117,7 @@ export class AuthService {
         email: invite.email,
         password: hashedPassword,
         tenantId: invite.tenantId,
-        role: 'ADMIN', // First user from invite is admin
+        role: invite.role, // Use role from invite
       },
     });
 

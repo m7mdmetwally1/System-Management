@@ -48,5 +48,6 @@ model Invite {
   token     String   @unique
   expiresAt DateTime
   used      Boolean  @default(false)
+  role      Role     @default(USER)
   createdAt DateTime @default(now())
 }

@@ -406,11 +406,23 @@
             "type": "number",
             "example": 1,
             "description": "Tenant ID"
+          },
+          "role": {
+            "type": "string",
+            "example": "USER",
+            "description": "User role (USER, ADMIN, or SUPER_ADMIN)",
+            "enum": [
+              "USER",
+              "ADMIN",
+              "SUPER_ADMIN"
+            ],
+            "default": "USER"
           }
         },
         "required": [
           "email",
-          "tenantId"
+          "tenantId",
+          "role"
         ]
       },
       "AcceptInviteDto": {
