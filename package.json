@@ -18,7 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "swagger:generate": "ts-node scripts/generate-swagger.ts"
+    "swagger:generate": "ts-node scripts/generate-swagger.ts",
+    "tenant:create": "ts-node scripts/create-tenant.ts",
+    "invite:send": "ts-node scripts/send-invite.ts"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.3.6",
