@@ -1,98 +1,94 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# System Management API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Multi-tenant SaaS platform with role-based access control and invitation-based authentication.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Authentication Flow
 
-## Description
+This system uses invitation-based authentication. Users cannot self-register.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
+### 1. Create Tenant (SUPER_ADMIN only)
 ```bash
-$ npm install
+POST /tenants
+{ "name": "Company Name" }
 ```
 
-## Compile and run the project
-
+### 2. Send Invitation
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+POST /auth/send-invite
+{
+  "email": "user@company.com",
+  "tenantId": 1,
+  "role": "ADMIN"  // Optional: USER, ADMIN, SUPER_ADMIN (default: USER)
+}
 ```
 
-## Run tests
-
+### 3. Accept Invitation (via email link)
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+POST /auth/accept-invite
+{
+  "token": "token-from-email",
+  "password": "SecurePassword123"
+}
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 4. Login
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+POST /auth/login
+{
+  "email": "user@company.com",
+  "password": "SecurePassword123",
+  "tenantId": 1
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Response:
+```json
+{
+  "access_token": "jwt-token",
+  "refresh_token": "refresh-token",
+  "user": { "id": 1, "email": "...", "role": "ADMIN", "tenantId": 1 }
+}
+```
 
-## Resources
+## Token Usage
 
-Check out a few resources that may come in handy when working with NestJS:
+**Access Token**: Include in header `Authorization: Bearer {access_token}` for all protected endpoints.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+**Refresh Token**: Use to get new access token
+```bash
+POST /auth/refresh
+{ "refreshToken": "refresh-token" }
+```
 
-## Support
+**Logout**:
+```bash
+POST /auth/logout
+Authorization: Bearer {access_token}
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Role Permissions
 
-## Stay in touch
+- **SUPER_ADMIN**: Full access, can manage tenants and send invites
+- **ADMIN**: Can manage users within their tenant
+- **USER**: Standard user access
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## API Documentation
 
-## License
+Interactive documentation available at: `http://localhost:3000/api/docs`
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+OpenAPI spec: `swagger-spec.json` in repository
+
+## Tech Stack
+
+- NestJS (TypeScript)
+- PostgreSQL with Prisma ORM
+- JWT Authentication
+- Nodemailer for emails
+
+## Setup
+
+```bash
+npm install
+npx prisma migrate dev
+npm run start:dev
+```
